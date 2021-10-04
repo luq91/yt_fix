@@ -61,7 +61,7 @@
   function isObject(obj) {
     return obj !== null && typeof obj === "object";
   }
- 
+
   // Source: https://coursesweb.net/javascript/sha1-encrypt-data_cs
   function generateSha1Hash(msg) {
     function rotate_left(n, s) {
@@ -327,13 +327,6 @@
   }
 
   function isUserLoggedIn() {
-    // Session Cookie exists?
-    if (!getSidCookie()) return false;
-
-    // LOGGED_IN doesn't exist on embedded page, use DELEGATED_SESSION_ID as fallback
-    if (typeof getYtcfgValue('LOGGED_IN') === "boolean") return getYtcfgValue('LOGGED_IN');
-    if (typeof getYtcfgValue('DELEGATED_SESSION_ID') === "string") return true;
-
     return false;
   }
 
@@ -370,10 +363,6 @@
   function sendInnertubeRequest(endpoint, payload, useAuth) {
     const xmlhttp = new XMLHttpRequest();
     xmlhttp.open("POST", `/youtubei/${endpoint}?key=${getYtcfgValue('INNERTUBE_API_KEY')}`, false);
-    if (useAuth && isUserLoggedIn()) {
-      xmlhttp.withCredentials = true;
-      xmlhttp.setRequestHeader("Authorization", generateSidBasedAuth());
-    }
     xmlhttp.send(JSON.stringify(payload));
     return nativeJSONParse(xmlhttp.responseText);
   }
@@ -399,14 +388,6 @@
       playlistId,
       playlistIndex };
 
-  }
-
-
-  function generateSidBasedAuth() {
-    const timestamp = Math.floor(new Date().getTime() / 1000);
-    const input = timestamp + " " + sid + " " + location.origin;
-    const hash = generateSha1Hash(input);
-    return `SAPISIDHASH ${timestamp}_${hash}`;
   }
 
   const logPrefix = "Simple-YouTube-Age-Restriction-Bypass:";
@@ -480,27 +461,6 @@
     pageLoad.resolve();
   }
 
-  function show(message, duration = 5) {
-
-    pageLoad.then(_show);
-
-    function _show() {
-      const _duration = duration * 1000;
-      if (isDesktop) {
-        nNotification.duration = _duration;
-        nNotification.show(message);
-      } else {
-        nMobileText.innerText = message;
-        nNotification.setAttribute('dir', 'in');
-        setTimeout(() => {
-          nNotification.setAttribute('dir', 'out');
-        }, _duration + 225);
-      }
-    }
-  }
-
-  var Notification = { show };
-
   const unlockStrategies = [
   // Strategy 1: Retrieve the video info by using a age-gate bypass for the innertube API
   // Source: https://github.com/yt-dlp/yt-dlp/issues/574#issuecomment-887171136
@@ -522,8 +482,6 @@
     name: 'Account Proxy',
     requireAuth: false,
     fn: (videoId, reason) => getPlayer(videoId, reason) }];
-
-
 
   let lastProxiedGoogleVideoUrlParams;
   let responseCache = {};
